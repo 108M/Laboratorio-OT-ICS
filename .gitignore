@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+detection/evidence/eve.json
+detection/evidence/*.pcap
+.env

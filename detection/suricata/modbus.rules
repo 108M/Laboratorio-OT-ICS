@@ -1,0 +1,24 @@
+## Reglas Suricata para el laboratorio OT/ICS (protocolo Modbus TCP)
+## Referencia: https://docs.suricata.io/en/latest/rules/modbus-keyword.html
+##
+## $OT_SERVERS se define en tiempo de ejecucion (ver detection/README.md):
+##   --set vars.address-groups.OT_SERVERS="[192.168.20.10]"
+##
+## Convencion de SID de este laboratorio: 1000001-1000099.
+
+# --- T0846 Remote System Discovery: muchas peticiones Modbus en poco tiempo
+# desde el mismo origen (patron de escaneo/enumeracion, ver attack/01_recon.py) ---
+alert modbus any any -> $OT_SERVERS any (msg:"OT-LAB Posible reconocimiento Modbus (rafaga de peticiones)"; flow:to_server; modbus.function public; threshold:type threshold, track by_src, count 8, seconds 5; classtype:attempted-recon; sid:1000001; rev:1;)
+
+# --- T0836 Modify Parameter: escritura del setpoint (holding register 0)
+# desde cualquier origen que NO sea el HMI legitimo (192.168.20.20) ---
+alert modbus !192.168.20.20 any -> $OT_SERVERS any (msg:"OT-LAB Escritura no autorizada del setpoint (holding register 0)"; flow:to_server; modbus.access write holding, address 0; classtype:attempted-admin; sid:1000002; rev:1;)
+
+# --- T0855 Unauthorized Command Message: ninguna escritura por red al coil de
+# la bomba (coil 0) es legitima; el HMI solo LEE ese coil (ver plc/PROCESO.md) ---
+alert modbus any any -> $OT_SERVERS any (msg:"OT-LAB Comando no autorizado sobre el coil de la bomba"; flow:to_server; modbus.access write coils, address 0; classtype:attempted-admin; sid:1000003; rev:1;)
+
+# --- T0801 Monitor Process State: lectura del setpoint/nivel desde un origen
+# que no sea el HMI (informativo: leer no es tan grave como escribir, por eso
+# es "target 1" en vez de "attempted-admin") ---
+alert modbus !192.168.20.20 any -> $OT_SERVERS any (msg:"OT-LAB Lectura no autorizada del proceso (holding registers)"; flow:to_server; modbus.access read holding; classtype:not-suspicious; sid:1000004; rev:1;)

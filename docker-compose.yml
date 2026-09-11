@@ -1,0 +1,98 @@
+name: laboratorio-ot-ics
+
+networks:
+  net_it_attacker:
+    internal: true
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
+  net_ot_control:
+    internal: true
+    ipam:
+      config:
+        - subnet: 192.168.20.0/24
+
+services:
+  # --- Zona de Control: PLC virtual (OpenPLC v3, build oficial desde GitHub) ---
+  openplc:
+    build:
+      context: https://github.com/thiagoralves/OpenPLC_v3.git
+    container_name: lab_openplc
+    cap_add:
+      - NET_ADMIN
+    working_dir: /workdir
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      ip route add 192.168.10.0/24 via 192.168.20.254 2>/dev/null;
+      exec ./start_openplc.sh
+    ports:
+      - "8080:8080" # interfaz web de programacion (setup manual, ver README)
+    networks:
+      net_ot_control:
+        ipv4_address: 192.168.20.10
+    restart: unless-stopped
+
+  # --- Zona de Control: HMI legitimo (Flask + pymodbus) ---
+  hmi-dashboard:
+    build: ./hmi
+    container_name: lab_hmi
+    environment:
+      PLC_HOST: "192.168.20.10"
+      PLC_PORT: "502"
+    ports:
+      - "5000:5000"
+    networks:
+      net_ot_control:
+        ipv4_address: 192.168.20.20
+    depends_on:
+      - openplc
+    restart: unless-stopped
+
+  # --- IDS en el conducto: comparte el namespace de red del PLC, asi ve todo
+  # el trafico que llega a 192.168.20.10 sin depender de un puerto espejo ---
+  suricata:
+    build: ./detection/suricata
+    container_name: lab_suricata
+    network_mode: "service:openplc"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./detection/evidence:/var/log/suricata
+    command: >
+      suricata -c /etc/suricata/suricata.yaml -i eth0
+      -S /rules/modbus.rules -l /var/log/suricata
+      --set vars.address-groups.OT_SERVERS="[192.168.20.10]"
+      --set app-layer.protocols.modbus.enabled=yes
+    depends_on:
+      - openplc
+    restart: unless-stopped
+
+  # --- Zona IT/atacante: aislada, solo llega a la zona de Control a traves
+  # del router. Sin servicio propio: se usa con `docker compose exec` ---
+  attacker:
+    build: ./attack
+    container_name: lab_attacker
+    cap_add:
+      - NET_ADMIN
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      ip route add 192.168.20.0/24 via 192.168.10.254 2>/dev/null;
+      exec sleep infinity
+    networks:
+      net_it_attacker:
+        ipv4_address: 192.168.10.10
+    restart: unless-stopped
+
+  # --- Conducto entre zonas: aplica la politica IEC 62443 (flat/segmented) ---
+  router:
+    build: ./iac/router
+    container_name: lab_router
+    cap_add:
+      - NET_ADMIN
+    networks:
+      net_it_attacker:
+        ipv4_address: 192.168.10.254
+      net_ot_control:
+        ipv4_address: 192.168.20.254
+    restart: unless-stopped
