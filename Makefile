@@ -1,7 +1,17 @@
-.PHONY: up down ps logs flat segmented attack-recon attack-read attack-write-setpoint attack-write-coil capture-evidence clean
+.PHONY: up down ps logs flat segmented attack-recon attack-read attack-write-setpoint attack-write-coil capture-evidence clean openplc-upstream
 
-up:
+up: openplc-upstream
+	@echo "Ajustando net.bridge.bridge-nf-call-iptables=0 (necesario en Linux/WSL2 para"
+	@echo "que el contenedor router pueda reenviar trafico entre las dos redes; ver"
+	@echo "README.md > Solucion de problemas). Se ignora el error si no aplica (p. ej. Docker Desktop en macOS)."
+	-sysctl -w net.bridge.bridge-nf-call-iptables=0 2>/dev/null || sudo sysctl -w net.bridge.bridge-nf-call-iptables=0 2>/dev/null || true
 	docker compose up -d --build
+
+## openplc/Dockerfile extiende esta imagen (le añade iproute2, que la oficial
+## no trae). Se construye aparte porque BuildKit no permite usar un contexto
+## git remoto como FROM de otro Dockerfile.
+openplc-upstream:
+	docker build -t openplc-upstream:latest https://github.com/thiagoralves/OpenPLC_v3.git
 
 down:
 	docker compose down

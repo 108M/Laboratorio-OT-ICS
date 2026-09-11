@@ -38,9 +38,9 @@ def main() -> None:
         print(f"[!] No se pudo conectar a {args.host}:{args.port}")
         return
 
-    setpoint = client.read_holding_registers(address=REG_SETPOINT, count=1, slave=args.unit_id)
-    nivel = client.read_holding_registers(address=REG_NIVEL, count=1, slave=args.unit_id)
-    coils = client.read_coils(address=COIL_BOMBA, count=2, slave=args.unit_id)
+    setpoint = client.read_holding_registers(address=REG_SETPOINT, count=1, device_id=args.unit_id)
+    nivel = client.read_holding_registers(address=REG_NIVEL, count=1, device_id=args.unit_id)
+    coils = client.read_coils(address=COIL_BOMBA, count=2, device_id=args.unit_id)
     client.close()
 
     if setpoint.isError() or nivel.isError() or coils.isError():

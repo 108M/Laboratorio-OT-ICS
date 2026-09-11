@@ -1,8 +1,8 @@
 #!/bin/sh
-# Habilita el forwarding IP dentro del namespace de red de este contenedor
-# (requiere cap_add: NET_ADMIN en docker-compose.yml; no hace falta --privileged).
+# El forwarding IP (net.ipv4.ip_forward=1) lo aplica docker-compose.yml via la
+# clave "sysctls" (no usamos el binario sysctl aqui, no viene instalado con
+# nftables/iproute2).
 set -e
-sysctl -w net.ipv4.ip_forward=1 >/dev/null
 
 # Estado inicial del laboratorio: red plana (sin segmentacion). Cambiar de
 # modo despues de arrancar con: docker compose exec router /rules/segmented.sh

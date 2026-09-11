@@ -39,13 +39,13 @@ def main() -> None:
 
     print("[*] Sondeando holding registers (FC03)...")
     for addr in RANGO_REGISTROS:
-        resp = client.read_holding_registers(address=addr, count=1, slave=args.unit_id)
+        resp = client.read_holding_registers(address=addr, count=1, device_id=args.unit_id)
         if not resp.isError():
             print(f"    holding_register[{addr}] = {resp.registers[0]}")
 
     print("\n[*] Sondeando coils (FC01)...")
     for addr in RANGO_COILS:
-        resp = client.read_coils(address=addr, count=1, slave=args.unit_id)
+        resp = client.read_coils(address=addr, count=1, device_id=args.unit_id)
         if not resp.isError():
             print(f"    coil[{addr}] = {resp.bits[0]}")
 

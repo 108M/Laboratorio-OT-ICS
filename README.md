@@ -103,8 +103,9 @@ make up                     # docker compose up -d --build
 # 2. Configuracion manual, una sola vez: abrir http://localhost:8080,
 #    entrar con el usuario/clave por defecto de OpenPLC (openplc/openplc;
 #    verificar y cambiar en el primer arranque), subir plc/tank_control.st
-#    en "Programs", compilarlo, y en "Settings" habilitar el servidor
-#    Modbus TCP en el puerto 502.
+#    en "Programs" y compilarlo, y en "Programs" pulsar "Start PLC".
+#    El servidor Modbus TCP en el puerto 502 ya viene habilitado por
+#    defecto en "Settings" (verificar ahi si no responde).
 
 # 3. Ver el HMI en vivo
 #    http://localhost:5000
@@ -127,12 +128,39 @@ make down                    # docker compose down
 Guía completa de la demo de detección/segmentación:
 [`detection/README.md`](detection/README.md).
 
+## Solución de problemas
+
+- **El `attacker` no alcanza al PLC ni siquiera en modo `flat`** (timeouts,
+  0% de paquetes en un `ping` de prueba): en Linux/WSL2, el kernel suele
+  tener `net.bridge.bridge-nf-call-iptables=1`, lo que hace que el `FORWARD`
+  del **host** (con política `DROP` por defecto en Docker) evalúe también el
+  tráfico puramente L2 entre las dos redes Docker — y lo descarta antes de
+  que llegue siquiera al contenedor `router`, aunque su propio `nftables`
+  esté en modo `flat`/accept. `make up` ya intenta corregirlo automáticamente
+  (`sysctl -w net.bridge.bridge-nf-call-iptables=0`); si tu usuario no puede
+  usar `sudo` sin contraseña, hazlo manualmente antes de `make up`:
+  ```bash
+  sudo sysctl -w net.bridge.bridge-nf-call-iptables=0
+  ```
+  Detalle completo de cómo se diagnosticó en
+  [`docs/lecciones_aprendidas.md`](docs/lecciones_aprendidas.md).
+- **`docker compose exec router /rules/segmented.sh` no bloquea nada**:
+  confirma que `net.ipv4.ip_forward=1` sigue activo dentro del contenedor
+  (`docker compose exec router cat /proc/sys/net/ipv4/ip_forward`) — lo
+  aplica la clave `sysctls:` de `docker-compose.yml`.
+- **El programa no compila en OpenPLC** ("invalid located variable
+  declaration"): matiec (el compilador que usa OpenPLC) no permite mezclar
+  variables `AT %...` (ubicadas) con variables normales dentro del mismo
+  bloque `VAR ... END_VAR` — deben ir en bloques `VAR` separados, como ya
+  hace `plc/tank_control.st`.
+
 ## Capturas esperadas
 
 *(Añadir aquí tras ejecutar el laboratorio: captura del HMI con el nivel
-subiendo tras el ataque al setpoint, salida de `docker compose logs
-suricata` con la alerta SID 1000002 en modo `flat`, y salida de `docker
-compose logs router` con la línea `CONDUCTO-BLOQUEADO` en modo `segmented`.)*
+subiendo tras el ataque al setpoint, salida de
+`grep signature detection/evidence/eve.json` con la alerta SID 1000005 en
+modo `flat`, y salida de `docker compose exec router nft list ruleset` con
+el contador de `CONDUCTO-BLOQUEADO` aumentando en modo `segmented`.)*
 
 ## Qué aprendí
 

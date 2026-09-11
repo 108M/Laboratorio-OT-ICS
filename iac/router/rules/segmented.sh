@@ -24,8 +24,12 @@ nft add rule inet conduit forward ct state established,related accept
 nft add rule inet conduit forward ip saddr $HMI_IP ip daddr $PLC_IP tcp dport 502 accept
 
 # Cualquier otro intento de la zona IT hacia la zona de Control queda
-# registrado explicitamente antes de caer en la politica DROP por defecto
-# (evidencia para detection/evidence/).
-nft add rule inet conduit forward ip saddr $ZONA_IT ip daddr $ZONA_CONTROL log prefix \"CONDUCTO-BLOQUEADO \" drop
+# registrado y contado explicitamente antes de caer en la politica DROP por
+# defecto. El "counter" es la evidencia portable (consultar con
+# `docker compose exec router nft list ruleset`); el "log" solo aparece en
+# `dmesg` si el kernel del host expone el target LOG a este namespace de red
+# (no siempre es el caso, p. ej. en WSL2 -- ver docs/lecciones_aprendidas.md).
+nft add rule inet conduit forward ip saddr $ZONA_IT ip daddr $ZONA_CONTROL counter log prefix \"CONDUCTO-BLOQUEADO \" drop
 
 echo "[router] modo SEGMENTED aplicado: solo $HMI_IP -> $PLC_IP:502 permitido entre zonas."
+echo "[router] evidencia de bloqueos: docker compose exec router nft list ruleset"

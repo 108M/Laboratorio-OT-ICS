@@ -11,25 +11,30 @@ networks:
     ipam:
       config:
         - subnet: 192.168.20.0/24
+  # Red NO aislada, solo para publicar la web de OpenPLC y el HMI hacia el
+  # host (equivalente a la NIC de gestion de un puesto de ingenieria real).
+  # No participa en la simulacion de ataque/segmentacion: esa vive entera en
+  # net_it_attacker/net_ot_control, que siguen "internal: true".
+  net_mgmt: {}
 
 services:
   # --- Zona de Control: PLC virtual (OpenPLC v3, build oficial desde GitHub) ---
   openplc:
     build:
-      context: https://github.com/thiagoralves/OpenPLC_v3.git
+      context: ./iac/openplc # extiende openplc-upstream:latest, ver Makefile
     container_name: lab_openplc
     cap_add:
       - NET_ADMIN
     working_dir: /workdir
     entrypoint: ["/bin/sh", "-c"]
-    command: >
-      ip route add 192.168.10.0/24 via 192.168.20.254 2>/dev/null;
-      exec ./start_openplc.sh
+    command:
+      - "ip route add 192.168.10.0/24 via 192.168.20.254 2>/dev/null; exec ./start_openplc.sh"
     ports:
       - "8080:8080" # interfaz web de programacion (setup manual, ver README)
     networks:
       net_ot_control:
         ipv4_address: 192.168.20.10
+      net_mgmt: {}
     restart: unless-stopped
 
   # --- Zona de Control: HMI legitimo (Flask + pymodbus) ---
@@ -44,6 +49,7 @@ services:
     networks:
       net_ot_control:
         ipv4_address: 192.168.20.20
+      net_mgmt: {}
     depends_on:
       - openplc
     restart: unless-stopped
@@ -76,9 +82,8 @@ services:
     cap_add:
       - NET_ADMIN
     entrypoint: ["/bin/sh", "-c"]
-    command: >
-      ip route add 192.168.20.0/24 via 192.168.10.254 2>/dev/null;
-      exec sleep infinity
+    command:
+      - "ip route add 192.168.20.0/24 via 192.168.10.254 2>/dev/null; exec sleep infinity"
     networks:
       net_it_attacker:
         ipv4_address: 192.168.10.10
@@ -90,6 +95,8 @@ services:
     container_name: lab_router
     cap_add:
       - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
     networks:
       net_it_attacker:
         ipv4_address: 192.168.10.254

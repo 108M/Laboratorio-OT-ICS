@@ -53,8 +53,9 @@ con la mitigación real de MITRE y cómo la aborda (o no) este laboratorio.
 - **Mitigación MITRE:** los dispositivos que reciben comandos deberían
   verificarlos antes de actuar; *allow-listing* de comandos de protocolo
   automatización a nivel de red.
-- **En este laboratorio:** la regla Suricata SID 1000003 alerta ante
-  cualquier escritura por red a ese coil (nadie debería escribirlo nunca);
+- **En este laboratorio:** las reglas Suricata SID 1000003/1000006 alertan
+  ante cualquier escritura por red a ese coil (nadie debería escribirlo
+  nunca; ver `detection/README.md` sobre por qué son dos reglas y no una);
   un firewall consciente de protocolo (Modbus-aware) en el conducto sería
   el siguiente paso natural (ver "trabajo futuro" en `segmentation/`).
 

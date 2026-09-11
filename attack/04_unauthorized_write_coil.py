@@ -50,7 +50,7 @@ def main() -> None:
     fin = time.time() + args.segundos
     try:
         while time.time() < fin:
-            resp = client.write_coil(address=COIL_BOMBA, value=True, slave=args.unit_id)
+            resp = client.write_coil(address=COIL_BOMBA, value=True, device_id=args.unit_id)
             if not resp.isError():
                 escrituras += 1
             time.sleep(0.02)  # mas rapido que el scan de 100ms del PLC

@@ -84,9 +84,9 @@ def _client():
 def index():
     client = _client()
     try:
-        hr = client.read_holding_registers(address=REG_NIVEL, count=1, slave=UNIT_ID)
-        sp = client.read_holding_registers(address=REG_SETPOINT, count=1, slave=UNIT_ID)
-        coils = client.read_coils(address=COIL_BOMBA, count=2, slave=UNIT_ID)
+        hr = client.read_holding_registers(address=REG_NIVEL, count=1, device_id=UNIT_ID)
+        sp = client.read_holding_registers(address=REG_SETPOINT, count=1, device_id=UNIT_ID)
+        coils = client.read_coils(address=COIL_BOMBA, count=2, device_id=UNIT_ID)
         if hr.isError() or sp.isError() or coils.isError():
             raise IOError("respuesta Modbus con error")
         nivel = hr.registers[0]
@@ -122,7 +122,7 @@ def set_setpoint():
     valor = max(SETPOINT_MIN, min(SETPOINT_MAX, valor))
     client = _client()
     try:
-        client.write_register(address=REG_SETPOINT, value=valor, slave=UNIT_ID)
+        client.write_register(address=REG_SETPOINT, value=valor, device_id=UNIT_ID)
     finally:
         client.close()
     return redirect("/")

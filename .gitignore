@@ -3,4 +3,5 @@ __pycache__/
 .venv/
 detection/evidence/eve.json
 detection/evidence/*.pcap
+detection/evidence/*.log
 .env

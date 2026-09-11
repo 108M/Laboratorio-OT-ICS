@@ -93,10 +93,12 @@ Ver `detection/evidence/` para las capturas (`pcap`) y alertas (`eve.json`)
 de `attack/03_unauthorized_write_setpoint.py` ejecutado:
 
 - **En `flat`**: el paquete llega al PLC, el setpoint cambia, y Suricata
-  genera una alerta (SID 1000002) — detección funciona, prevención no.
-- **En `segmented`**: el paquete se descarta en el `router` (log
-  `CONDUCTO-BLOQUEADO`) y nunca llega al PLC — no hay alerta de Suricata
-  porque el ataque nunca alcanza la zona de Control. Prevención funciona.
+  genera una alerta (SID 1000005) — detección funciona, prevención no.
+- **En `segmented`**: el paquete se descarta en el `router` (contador de la
+  regla `CONDUCTO-BLOQUEADO`, consultable con
+  `docker compose exec router nft list ruleset`) y nunca llega al PLC — la
+  conexión del atacante falla por timeout y no hay alerta de Suricata porque
+  el ataque nunca alcanza la zona de Control. Prevención funciona.
 
 Esta comparación es la demostración práctica de **defensa en profundidad**:
 ninguna de las dos capas por sí sola es suficiente (la segmentación no

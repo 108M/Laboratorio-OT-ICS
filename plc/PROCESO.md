@@ -31,10 +31,18 @@ parpadeando, desgaste de la bomba) — un patrón de ataque realista, no un
 
 | Dirección Modbus | Tipo               | Variable IEC 61131-3 | Descripción                                   | Acceso esperado         |
 |-------------------|--------------------|-----------------------|------------------------------------------------|--------------------------|
-| Holding register 0 | 16-bit (FC03/06/16) | `setpoint AT %MW0`   | Nivel deseado (0–1000)                        | Escritura solo por HMI  |
-| Holding register 1 | 16-bit (FC03)       | `nivel AT %MW1`      | Nivel actual del depósito (0–1000)            | Solo lectura            |
+| Holding register 0 | 16-bit (FC03/06/16) | `setpoint AT %QW0`   | Nivel deseado (0–1000)                        | Escritura solo por HMI  |
+| Holding register 1 | 16-bit (FC03)       | `nivel AT %QW1`      | Nivel actual del depósito (0–1000)            | Solo lectura            |
 | Coil 0              | 1-bit (FC01/05/15)  | `bomba AT %QX0.0`    | Estado de la bomba de llenado                 | Solo lectura (la escribe el propio PLC) |
 | Coil 1              | 1-bit (FC01/05/15)  | `alarma AT %QX0.1`   | Alarma de nivel alto (interlock)              | Solo lectura            |
+
+Se usa la clase de dirección **%Q** (no %M) para `setpoint`/`nivel` a
+propósito: en el runtime de OpenPLC, el servidor Modbus solo sincroniza
+automáticamente las variables `%I`/`%Q` con clientes externos — `%M` es
+memoria interna del propio programa y una escritura Modbus a un `%MW` se
+guarda en la tabla de registros sin que el programa la vea nunca. Se
+verificó empíricamente al construir este laboratorio (ver
+[`docs/lecciones_aprendidas.md`](../docs/lecciones_aprendidas.md)).
 
 Modbus TCP **no tiene control de acceso**: nada impide técnicamente que
 cualquier cliente en la red escriba en `holding register 0` o en `coil 0`,
