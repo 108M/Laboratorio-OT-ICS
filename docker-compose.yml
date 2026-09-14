@@ -65,8 +65,12 @@ services:
       - NET_RAW
     volumes:
       - ./detection/evidence:/var/log/suricata
+    # Escucha en las dos interfaces del netns compartido con openplc: el
+    # orden eth0/eth1 -> red_mgmt/red_ot_control no esta garantizado (depende
+    # de como Compose adjunta las redes), asi que se capturan ambas en vez de
+    # asumir cual es la 192.168.20.0/24 donde va el trafico Modbus.
     command: >
-      suricata -c /etc/suricata/suricata.yaml -i eth0
+      suricata -c /etc/suricata/suricata.yaml -i eth0 -i eth1
       -S /rules/modbus.rules -l /var/log/suricata
       --set vars.address-groups.OT_SERVERS="[192.168.20.10]"
       --set app-layer.protocols.modbus.enabled=yes

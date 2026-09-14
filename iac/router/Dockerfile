@@ -1,7 +1,7 @@
 FROM debian:bookworm-slim
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends nftables iproute2 iputils-ping \
+    && apt-get install -y --no-install-recommends nftables iproute2 iputils-ping tcpdump \
     && rm -rf /var/lib/apt/lists/*
 
 COPY rules/ /rules/
